@@ -16,6 +16,11 @@ __BINARY_API:__  This lib supports http2. Check [using Legacy Binary API](https:
 - You must have installed an updated Openssl version or, at least, be sure it supports TLS 1.2+. New APNs server only supports connections over TLS 1.2+.
 - Erlang R21
 
+### Note:
+apns_topic is app bundle identifier
+voip notifications append '.voip' > !apple! undocumented
+https://stackoverflow.com/questions/40301655/voip-push-with-new-token-based-auth
+
 ### How to compile:
 
 `apns_erlang` user `erlang.mk` as make system. To compile
