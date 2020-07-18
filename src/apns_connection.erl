@@ -576,6 +576,7 @@ get_headers(Headers) ->
          , {<<"apns-expiration">>, apns_expiration, <<"0">>}
          , {<<"apns-priority">>, apns_priority, <<"5">>}
          , {<<"apns-topic">>, apns_topic, undefined}
+         , {<<"apns-push-type">>, apns_push_type, <<"alert">>}
          , {<<"apns-collapse_id">>, apns_collapse_id, undefined}
          , {<<"authorization">>, apns_auth_token, undefined}
          ],

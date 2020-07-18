@@ -47,6 +47,7 @@
                       , apns_expiration  => binary()
                       , apns_priority    => binary()
                       , apns_topic       => binary()
+                      , apns_push_type	 => binary()
                       , apns_collapse_id => binary()
                       , apns_auth_token  => binary()
                       }.
@@ -120,6 +121,7 @@ default_headers() ->
             , apns_expiration
             , apns_priority
             , apns_topic
+            , apns_push_type
             , apns_collapse_id
             ],
 
