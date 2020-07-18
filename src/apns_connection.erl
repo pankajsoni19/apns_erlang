@@ -206,12 +206,16 @@ generate_token(KeyId, TeamId, PrivKey, Iat) ->
   DataEncoded = <<HeaderEncoded/binary, $., PayloadEncoded/binary>>,
   
   {ok, Key} = file:read_file(PrivKey),
-  [ECPrivateKeyPem] = public_key:pem_decode(Key),
-  #'PrivateKeyInfo'{privateKey = ECPrivateKey} = public_key:pem_entry_decode(ECPrivateKeyPem),
-  ECKey = public_key:der_decode('ECPrivateKey', ECPrivateKey),
+  [ECPrivateKeyPem | _] = public_key:pem_decode(Key),
+
+  ECKey =
+      case public_key:pem_entry_decode(ECPrivateKeyPem) of
+          #'PrivateKeyInfo'{privateKey = ECPrivateKey} -> public_key:der_decode('ECPrivateKey', ECPrivateKey);
+          #'ECPrivateKey'{} = DecKey -> DecKey
+      end,
+      
   Encoded = public_key:sign(DataEncoded, sha256, ECKey),
   Signature = base64:encode(Encoded),
-%%  Signature = apns_utils:strip_b64(BS),
 
   <<DataEncoded/binary, $., Signature/binary>>.
 
