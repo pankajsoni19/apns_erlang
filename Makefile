@@ -1,5 +1,5 @@
 PROJECT = apns
-PROJECT_VERSION = $(shell git describe --tag --abbrev=0)
+PROJECT_VERSION = $(shell head -n 1 relx.config | awk '{split($$0, a, "\""); print a[2]}')
 
 app:: rebar.config
 
