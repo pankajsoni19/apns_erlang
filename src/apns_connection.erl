@@ -492,21 +492,20 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%%===================================================================
 %%% Connection getters/setters Functions
 %%%===================================================================
-
-process_error(Connection, M, F, DeviceId, Body) ->
-  BodyJson = jsx:decode(Body, [return_maps]),
-  Reason = maps:get(<<"reason">>, BodyJson, <<"">>),
-  Timestamp = maps:get(<<"timestamp">>, BodyJson, 0),
-  process_error(Connection, M, F, DeviceId, Reason, Timestamp).
-
-process_error(Connection, M, F, DeviceId, <<"BadDeviceToken">>, _) ->
+process_error1(Connection, M, F, DeviceId, <<"BadDeviceToken">>, _) ->
   Timestamp = os:system_time(seconds),
   catch erlang:apply(M, F, [Connection, DeviceId, Timestamp]);
 
-process_error(Connection, M, F, DeviceId, <<"Unregistered">>, Timestamp) ->
+process_error1(Connection, M, F, DeviceId, <<"Unregistered">>, Timestamp) ->
   catch erlang:apply(M, F, [Connection, DeviceId, Timestamp]);
 
-process_error(_, _, _, _, _, _) -> ok.
+process_error1(_, _, _, _, _, _) -> ok.
+
+process_error(#{name := Proc}, M, F, DeviceId, Body) ->
+  BodyJson = jsx:decode(Body, [return_maps]),
+  Reason = maps:get(<<"reason">>, BodyJson, <<"">>),
+  Timestamp = maps:get(<<"timestamp">>, BodyJson, 0),
+  process_error1(Proc, M, F, DeviceId, Reason, Timestamp).
 
 -spec name(connection()) -> name().
 name(#{name := ConnectionName}) ->
