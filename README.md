@@ -38,7 +38,7 @@ To generate release
 You can use `apns_erlang` as a dependency in your rebar.config:
 
     {deps , [
-        {apns, ".*", {git, "https://github.com/softwarejoint/apns_erlang", {tag, "2.4.0"}}}
+        {apns, ".*", {git, "https://github.com/pankajsoni19/apns_erlang", {tag, "2.8.0"}}}
     ]}.
 
 ### How to run the application apns_erlang:
