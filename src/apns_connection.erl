@@ -400,19 +400,20 @@ connected( info
          , {gun_response, _, StreamRef, nofin, Status, Headers}
          , StateData) ->
   #{connection := Connection, queue := Queue, gun_pid := GunConn} = StateData,
-  #{timeout := Timeout, feedback := Feedback} = Connection,
+  #{name := Proc, timeout := Timeout, feedback := Feedback} = Connection,
   ApnsId = find_header_val(Headers, apns_id),
   Queue1 = lists:keydelete(ApnsId, 1, Queue),
   case gun:await_body(GunConn, StreamRef, Timeout) of
       {ok, Body} ->
           ?DEBUG("Received Data: packet: ~p~n", [{Status, Headers, ApnsId, Body, Queue, Feedback}]),
-          case {Status, Feedback, proplists:get_value(ApnsId, Queue, ApnsId)} of
-              {400, {M, F}, DeviceId} ->
-                  process_error(Connection, M, F, DeviceId, Body);
-              {410, {M, F}, DeviceId} ->
-                  process_error(Connection, M, F, DeviceId, Body);
-              _ ->
-                  ok
+
+          case Feedback of
+            {M, F} ->
+              catch erlang:apply(M, F, [Proc, 
+                proplists:get_value(ApnsId, Queue, ApnsId), 
+                Status, decode_reason(Body)]);
+            _ ->
+              ok
           end;
       {error, Reason} ->
         ?ERROR_MSG("Error Reading Body ~p~n", [{Status, Headers, Reason}])
@@ -479,20 +480,12 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%%===================================================================
 %%% Connection getters/setters Functions
 %%%===================================================================
-process_error1(Connection, M, F, DeviceId, <<"BadDeviceToken">>, _) ->
-  Timestamp = os:system_time(seconds),
-  catch erlang:apply(M, F, [Connection, DeviceId, Timestamp]);
-
-process_error1(Connection, M, F, DeviceId, <<"Unregistered">>, Timestamp) ->
-  catch erlang:apply(M, F, [Connection, DeviceId, Timestamp]);
-
-process_error1(_, _, _, _, _, _) -> ok.
-
-process_error(#{name := Proc}, M, F, DeviceId, Body) ->
-  BodyJson = jsx:decode(Body, [return_maps]),
-  Reason = maps:get(<<"reason">>, BodyJson, <<"">>),
-  Timestamp = maps:get(<<"timestamp">>, BodyJson, 0),
-  process_error1(Proc, M, F, DeviceId, Reason, Timestamp).
+decode_reason(<<"">>) -> <<"">>;
+decode_reason(Body) -> 
+  case catch jsx:decode(Body, [return_maps]) of
+    #{<<"reason">> := R} -> R;
+    _ -> <<"">>
+  end.
 
 -spec name(connection()) -> name().
 name(#{name := ConnectionName}) ->
