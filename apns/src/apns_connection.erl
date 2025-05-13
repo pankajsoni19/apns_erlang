@@ -40,6 +40,7 @@
         , close_connection/1
         , push_notification/4
         , wait_apns_connection_up/1
+        , generate_token/4
         ]).
 
 %% gen_statem callbacks
@@ -194,29 +195,15 @@ update_token(#{token_kid := KeyId,
 generate_token(KeyId, TeamId, PrivKey, Iat) ->
   Algorithm = <<"ES256">>,
   Header = jsx:encode([ {alg, Algorithm}
-                      , {typ, <<"JWT">>}
                       , {kid, KeyId}
                       ]),
   Payload = jsx:encode([ {iss, TeamId}
                        , {iat, Iat}
                        ]),
-
   HeaderEncoded = base64url:encode(Header),
   PayloadEncoded = base64url:encode(Payload),
   DataEncoded = <<HeaderEncoded/binary, $., PayloadEncoded/binary>>,
-  
-  {ok, Key} = file:read_file(PrivKey),
-  [ECPrivateKeyPem | _] = public_key:pem_decode(Key),
-
-  ECKey =
-      case public_key:pem_entry_decode(ECPrivateKeyPem) of
-          #'PrivateKeyInfo'{privateKey = ECPrivateKey} -> public_key:der_decode('ECPrivateKey', ECPrivateKey);
-          #'ECPrivateKey'{} = DecKey -> DecKey
-      end,
-      
-  Encoded = public_key:sign(DataEncoded, sha256, ECKey),
-  Signature = base64:encode(Encoded),
-
+  Signature = apns_utils:sign(DataEncoded, PrivKey),
   <<DataEncoded/binary, $., Signature/binary>>.
 
 %% @doc Close the connection with APNs gracefully
